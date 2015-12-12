@@ -1,0 +1,26 @@
+name:                circleci
+version:             0.1.0.0
+synopsis:            Bindings to the CircleCI API
+license:             BSD3
+license-file:        LICENSE
+author:              David Johnson
+maintainer:          djohnson.m@gmail.com
+copyright:           David Johnson (c) 2015
+category:            Web
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+description:         Bindings to the CircleCI API
+
+library
+  exposed-modules: Web.CircleCI
+  hs-source-dirs:      src
+  ghc-options:         -Wall
+  build-depends:       aeson == 0.10.*
+                     , base >=4.7 && <5
+                     , either == 4.4.*
+                     , servant
+                     , servant-client
+                     , text
+                     , time
+  default-language:    Haskell2010
