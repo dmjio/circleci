@@ -43,6 +43,10 @@ newtype Offset = Offset Integer
 data Filter = Completed | Successful | Failed | Running
   deriving (Eq, Show, Generic)
 
+-- | FingerPrint
+newtype FingerPrint = FingerPrint Text
+  deriving (Eq, Show, Generic, ToText)
+
 instance ToText Filter where toText = T.toLower . T.pack . show
 
 -- | BuildNum
@@ -52,7 +56,6 @@ newtype BuildNum = BuildNum Integer
 -- | Branch
 newtype Branch = Branch Text
   deriving (Eq, Show, Generic, ToText)
-
 
 -- | Build Params
 data BuildParams = BuildParams {
@@ -85,3 +88,10 @@ data KeyType = GithubKey | DeployKey
 instance ToJSON KeyType where
   toJSON DeployKey = object [ "type" .= ("deploy-key" :: Text) ]
   toJSON GithubKey = object [ "type" .= ("github-user-key" :: Text) ] 
+
+data PrivateKey = PrivateKey {
+    pkHostname :: Text
+  , pkPrivateKey :: Text
+  } deriving (Show, Eq)
+
+$(deriveJSON defaultOptions { fieldLabelModifier = camelTo2 '_' . drop 2 } ''PrivateKey)

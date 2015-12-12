@@ -450,7 +450,6 @@ listCheckoutKeys key name project =
         -> EitherT ServantError IO Value
     req = client (Proxy :: Proxy CheckoutKeys) host
 
--- | GET /api/v1/project/:username/:project/checkout-key?circle-token=:token
 type NewCheckoutKey =
      "api"
   :> "v1"
@@ -461,7 +460,7 @@ type NewCheckoutKey =
   :> ReqBody '[JSON] KeyType
   :> Post '[JSON] Value
 
--- | Lists the checkout keys for :project
+-- | Creates a new checkout key. Only usable with a user API token.
 newCheckoutKey
   :: APIKey
   -> UserName
@@ -477,3 +476,115 @@ newCheckoutKey key name project keyType =
         -> KeyType
         -> EitherT ServantError IO Value
     req = client (Proxy :: Proxy NewCheckoutKey) host
+
+type GetCheckoutKey =
+     "api"
+  :> "v1"
+  :> "project"
+  :> QueryParam "circle-token" APIKey
+  :> Capture "username" UserName
+  :> Capture "project" Project
+  :> "checkout-key"
+  :> Capture "fingerprint" FingerPrint
+  :> Get '[JSON] Value
+
+-- | Creates a new checkout key. Only usable with a user API token.
+getCheckoutKey
+  :: APIKey
+  -> UserName
+  -> Project
+  -> FingerPrint
+  -> IO (Either ServantError Value)
+getCheckoutKey key name project fingerPrint =
+    runEitherT $ req (Just key) name project fingerPrint
+  where
+    req :: Maybe APIKey
+        -> UserName
+        -> Project
+        -> FingerPrint
+        -> EitherT ServantError IO Value
+    req = client (Proxy :: Proxy GetCheckoutKey) host
+
+type DeleteCheckoutKey =
+     "api"
+  :> "v1"
+  :> "project"
+  :> QueryParam "circle-token" APIKey
+  :> Capture "username" UserName
+  :> Capture "project" Project
+  :> "checkout-key"
+  :> Capture "fingerprint" FingerPrint
+  :> Delete '[JSON] Value
+
+-- | Creates a new checkout key. Only usable with a user API token.
+deleteCheckoutKey
+  :: APIKey
+  -> UserName
+  -> Project
+  -> FingerPrint
+  -> IO (Either ServantError Value)
+deleteCheckoutKey key name project fingerPrint =
+    runEitherT $ req (Just key) name project fingerPrint
+  where
+    req :: Maybe APIKey
+        -> UserName
+        -> Project
+        -> FingerPrint
+        -> EitherT ServantError IO Value
+    req = client (Proxy :: Proxy DeleteCheckoutKey) host
+
+-- | GET /api/v1/project/:username/:project/:build_num/tests?circle-token=:token
+type TestMetaData =
+     "api"
+  :> "v1"
+  :> "project"
+  :> QueryParam "circle-token" APIKey
+  :> Capture "username" UserName
+  :> Capture "project" Project
+  :> Capture "build_num" BuildNum
+  :> Delete '[JSON] Value
+
+-- | Provides test metadata for a build
+testMetaData
+  :: APIKey
+  -> UserName
+  -> Project
+  -> BuildNum
+  -> IO (Either ServantError Value)
+testMetaData key name project fingerPrint =
+    runEitherT $ req (Just key) name project fingerPrint
+  where
+    req :: Maybe APIKey
+        -> UserName
+        -> Project
+        -> BuildNum
+        -> EitherT ServantError IO Value
+    req = client (Proxy :: Proxy TestMetaData) host
+
+-- | GET /api/v1/project/:username/:project/:build_num/tests?circle-token=:token
+type SSHKeys =
+     "api"
+  :> "v1"
+  :> "project"
+  :> QueryParam "circle-token" APIKey
+  :> Capture "username" UserName
+  :> Capture "project" Project
+  :> ReqBody '[JSON] PrivateKey
+  :> Post '[JSON] Value
+
+-- | Creates an ssh key that will be used to access the external system identified by the hostname parameter for SSH key-based authentication.
+createSSHKey
+  :: APIKey
+  -> UserName
+  -> Project
+  -> PrivateKey
+  -> IO (Either ServantError Value)
+createSSHKey key name project privateKey =
+    runEitherT $ req (Just key) name project privateKey
+  where
+    req :: Maybe APIKey
+        -> UserName
+        -> Project
+        -> PrivateKey
+        -> EitherT ServantError IO Value
+    req = client (Proxy :: Proxy SSHKeys) host
