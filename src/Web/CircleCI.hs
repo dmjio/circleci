@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds     #-}
 module Web.CircleCI where
@@ -13,11 +14,13 @@ import Servant.Client
 import Servant.Common.Text
 import Web.CircleCI.Types
 
--- | Me API
+type CircleToken = QueryParam "circle-token" APIKey
+
+-- | GET /me
 type Me =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "me"
   :> Get '[JSON] Value
 
@@ -28,11 +31,11 @@ me key = runEitherT $ req (Just key)
     req :: Maybe APIKey -> EitherT ServantError IO Value
     req = client (Proxy :: Proxy Me) host
 
--- | Get Projects API
+-- | Get /projects
 type GetProjects =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "projects"
   :> Get '[JSON] Value
 
@@ -48,7 +51,7 @@ getProjects key = runEitherT $ req (Just key)
 type BuildSummary =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> QueryParam "limit" Limit
@@ -81,7 +84,7 @@ getBuildSummary key uname pid lim offst filter' =
 type RecentBuilds =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> QueryParam "limit" Limit
   :> QueryParam "offset" Offset
   :> "recent-builds"
@@ -106,7 +109,7 @@ getRecentBuilds key lim offst =
 type SingleBuild =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "project"
   :> Capture "username" UserName
   :> Capture "project" Project
@@ -136,7 +139,7 @@ getBuild key name pid num =
 type BuildArtifacts =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "project"
   :> Capture "username" UserName
   :> Capture "project" Project
@@ -166,7 +169,7 @@ getBuildArtifacts key name pid num =
 type RetryBuild =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "project"
   :> Capture "username" UserName
   :> Capture "project" Project
@@ -195,7 +198,7 @@ retryBuild key name pid num =
 type RetryBuildSSH =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "project"
   :> Capture "username" UserName
   :> Capture "project" Project
@@ -224,7 +227,7 @@ retryBuildSSH key name pid num =
 type AddUserToBuild =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "project"
   :> Capture "username" UserName
   :> Capture "project" Project
@@ -257,7 +260,7 @@ addUserToBuild key name pid num =
 type CancelBuild =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "project"
   :> Capture "username" UserName
   :> Capture "project" Project
@@ -286,14 +289,24 @@ cancelBuild key name pid num =
 type TriggerBuild =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "project"
   :> ReqBody '[JSON] BuildParams
   :> Capture "username" UserName
   :> Capture "project" Project
-  :> Capture "build_num" BuildNum
-  :> ""
+  :> "tree"
+  :> Capture "branch" Branch
   :> Post '[JSON] Value
+
+-- https://circleci.com/api/v1/project/:username/:project/tree/:branch?circle-token=:token
+
+triggerDevDeploy :: IO (Either ServantError Value)
+triggerDevDeploy =
+  triggerBuild (APIKey "2a5fcc932eb9c0f584e6bb5253f159596b6357c9")
+               (BuildParams Nothing Nothing [("ENV", String "dev")])
+               (UserName "vertigomedia")
+               (Project "Vertigo-Social")
+               (Branch "master")
 
 -- | Cancels the build, returns a summary of the build.
 triggerBuild
@@ -301,16 +314,16 @@ triggerBuild
   -> BuildParams
   -> UserName
   -> Project
-  -> BuildNum
+  -> Branch
   -> IO (Either ServantError Value)
-triggerBuild key name pid params num =
-    runEitherT $ req (Just key) name pid params num
+triggerBuild key name pid params branch =
+    runEitherT $ req (Just key) name pid params branch
   where
     req :: Maybe APIKey
         -> BuildParams
         -> UserName
         -> Project
-        -> BuildNum
+        -> Branch
         -> EitherT ServantError IO Value
     req = client (Proxy :: Proxy TriggerBuild) host
 
@@ -318,7 +331,7 @@ triggerBuild key name pid params num =
 type ClearCache =
      "api"
   :> "v1"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> "project"
   :> Capture "username" UserName
   :> Capture "project" Project
@@ -345,7 +358,7 @@ type ListEnvironment =
      "api"
   :> "v1"
   :> "project"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> "envvar"
@@ -371,7 +384,7 @@ type AddEnvironment =
      "api"
   :> "v1"
   :> "project"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> ReqBody '[JSON] Var
@@ -400,7 +413,7 @@ type DeleteEnvironment =
      "api"
   :> "v1"
   :> "project"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> "envvar"
@@ -429,7 +442,7 @@ type CheckoutKeys =
      "api"
   :> "v1"
   :> "project"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> "checkout-key"
@@ -454,7 +467,7 @@ type NewCheckoutKey =
      "api"
   :> "v1"
   :> "project"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> ReqBody '[JSON] KeyType
@@ -481,7 +494,7 @@ type GetCheckoutKey =
      "api"
   :> "v1"
   :> "project"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> "checkout-key"
@@ -509,7 +522,7 @@ type DeleteCheckoutKey =
      "api"
   :> "v1"
   :> "project"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> "checkout-key"
@@ -538,7 +551,7 @@ type TestMetaData =
      "api"
   :> "v1"
   :> "project"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> Capture "build_num" BuildNum
@@ -566,7 +579,7 @@ type SSHKeys =
      "api"
   :> "v1"
   :> "project"
-  :> QueryParam "circle-token" APIKey
+  :> CircleToken
   :> Capture "username" UserName
   :> Capture "project" Project
   :> ReqBody '[JSON] PrivateKey
